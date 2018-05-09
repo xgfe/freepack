@@ -1,0 +1,30 @@
+{
+  "name": "freepack",
+  "version": "1.0.0",
+  "description": "a file version free pack manager",
+  "main": "./libs/freepack.js",
+  "bin": {
+    "freepack": "freepack.js"
+  },
+  "directories": {
+    "doc": "doc"
+  },
+  "dependencies": {
+    "glob": "^7.1.2",
+    "github-changes": "^1.1.2",
+    "minimatch": "^3.0.4"
+  },
+  "devDependencies": {},
+  "scripts": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xgfe/freepack.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/xgfe/freepack/issues"
+  },
+  "homepage": "https://github.com/xgfe/freepack#readme"
+}
