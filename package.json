@@ -4,7 +4,10 @@
   "description": "a file version free pack manager",
   "main": "./libs/freepack.js",
   "bin": {
-    "freepack": "freepack.js"
+    "freepack": "./bin/freepack.js"
+  },
+  "scripts": {
+    "publish": "./build/publish.sh"
   },
   "directories": {
     "doc": "doc"
@@ -17,7 +20,6 @@
     "minimatch": "^3.0.4"
   },
   "devDependencies": {},
-  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/xgfe/freepack.git"
