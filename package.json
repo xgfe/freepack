@@ -7,7 +7,7 @@
     "freepack": "./bin/freepack.js"
   },
   "scripts": {
-    "publish": "./build/publish.sh"
+    "release": "./build/release.sh"
   },
   "directories": {
     "doc": "doc"
