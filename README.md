@@ -25,6 +25,10 @@ freepack
 
 
 ## Example
+**[Example Tree](./doc/example/tree.md)**
+**[Example .freepack.config.js](./doc/example/freepack.config.js.md)**
+**[Example rules](./doc/example/rules.md)**
+**[Example result rules/tree](./doc/example/result.md)**
 
 
 ## Rule
@@ -33,7 +37,7 @@ The new file will be released when the rule matches and dos not exist `negation`
 
 ### Rule Types
 #### [Object]Nesting Rule
-```json
+```js
 // rule
 {
   // Path Rule
@@ -126,7 +130,7 @@ Also, path rule can contain meta characters: `negation`, `separation`, `relation
 `$basic:a,b` => `/modules/Basic/a/*`, `/modules/Basic/b/*`
 
 `freepack.config.js`
-```json
+```js
 {
   "alias": {
     // value only support negation meta char
@@ -139,7 +143,7 @@ Also, path rule can contain meta characters: `negation`, `separation`, `relation
 `@common` => `/src/common/*`, `/src/libs/*`
 
 `freepack.config.js`
-```json
+```js
 {
   "module": {
     "common": [ "common", "libs" ]
@@ -186,8 +190,14 @@ Modify the default symbol configuration by `option.symbol`
 
 
 ## Option
-```json
+```js
 {
+  "git": "/absolute/path",
+  "cache": "/absolute/path",
+  "diff": "auto",
+  "match": "none", // strict none normal
+
+
   "root": "./src", // string (relative path!, default 'src')
   // the home directory for freepack
   // the rules is resolved relative to this directory
@@ -197,11 +207,11 @@ Modify the default symbol configuration by `option.symbol`
     // Note that the lastest matched will effect
 
     {}, // object
-    'path' // string (path rule)
-    '$alias', // string (alias rule)
-    '@module', // string (module rule)
-    '-match', // string (match rule)
-    '~regexp', // string (regexp rule)
+    "path", // string (path rule)
+    "$alias", // string (alias rule)
+    "@module", // string (module rule)
+    "-match", // string (match rule)
+    "~regexp", // string (regexp rule)
   ],
 
   "dot": false, // boolean (default false),
