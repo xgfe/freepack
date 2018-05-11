@@ -24,7 +24,7 @@
     "type": "git",
     "url": "git+https://github.com/xgfe/freepack.git"
   },
-  "author": "",
+  "author": "xgfe",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/xgfe/freepack/issues"
