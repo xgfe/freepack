@@ -222,7 +222,9 @@ Modify the default symbol configuration by `option.symbol`
   // case insensitive path
 
   // "ignore": [],
-  // a list of unrelease files
+  // a list of unrelease files, only support ignore file
+  // eg. "/.DS_Store" => ["/.DS_Store"]
+  // eg. ".DS_Store" => ["/.DS_Store", "/path/.DS_Store", ...]
 
   "alias": {
     // a list of path aliases
