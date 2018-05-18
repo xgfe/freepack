@@ -194,7 +194,7 @@ Modify the default symbol configuration by `option.symbol`
 {
   "git": "/absolute/path",
   "cache": "/absolute/path",
-  "diff": "auto",
+  "diff": "auto", // auto tag:v0.0.1 branch:branch_name commit:notsupport path:notsupport
   "match": "none", // strict none normal
 
 
