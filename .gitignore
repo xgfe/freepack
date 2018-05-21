@@ -4,5 +4,7 @@
 *.log
 .idea
 .vscode
+/.cache
+/test/.cache
 .eslintcache
 package-lock.json
