@@ -193,7 +193,6 @@ Modify the default symbol configuration by `option.symbol`
 ```js
 {
   "git": "/absolute/path",
-  "cache": "/absolute/path",
   "diff": "auto", // auto tag:v0.0.1 branch:branch_name commit:notsupport path:notsupport
   "match": "none", // strict none normal
 
@@ -217,9 +216,6 @@ Modify the default symbol configuration by `option.symbol`
   "dot": false, // boolean (default false),
   // Include .dot files in normal matches and globstar matches.
   // Note that an explicit dot in a portion of the pattern will always match dot files.
-
-  "ignoreCase": false, // boolean (default false),
-  // case insensitive path
 
   // "ignore": [],
   // a list of unrelease files, only support ignore file

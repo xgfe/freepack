@@ -19,8 +19,6 @@
         "regexp": "~",
     },
     "dot": false,
-    "ignoreCase": false,
-    "cacheDir": ".fpcache", // relative root
     "release": [
         // object path : (boolean|object)
         {
