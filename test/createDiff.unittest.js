@@ -6,51 +6,28 @@ const { list } = require('./helpers/list');
 
 const createDiff = require('../lib/createDiff');
 
-const CASE_DIR = path.join(__dirname, '../');
-const ROOT_DIR = path.join(CASE_DIR, './src');
+const PROJECT_DIR = path.join(__dirname, '../');
+const CACHE_DIR = path.join(__dirname, '.cache', Date.now().toString());
 
 
 describe('createDiff', () => {
     it('should create diff', () => {
         ['auto', 'tag:v0.0.1', 'branch:master'].forEach(tag => {
-            const option = {
-                root: ROOT_DIR,
-                git: CASE_DIR,
-                dir: path.join(__dirname, './.cache/createDiff'),
-                tag: tag
-            };
-            cleanup(option.dir);
-            expect(() => createDiff(option)).not.toThrow();
-            cleanup(option.dir);
+            cleanup(CACHE_DIR);
+            expect(() => createDiff(CACHE_DIR, PROJECT_DIR, tag)).not.toThrow();
+            cleanup(CACHE_DIR);
         });
     });
 
     it('should throw error when git repository not exist', () => {
-        expect(() => createDiff({
-            git: __dirname
-        })).toThrow();
-    });
-
-    it('should throw error when option.tag invalid', () => {
-        expect(() => createDiff({
-            git: CASE_DIR
-        })).toThrow();
-        expect(() => createDiff({
-            git: CASE_DIR,
-            tag: 'string'
-        })).toThrow();
+        expect(() => createDiff(CACHE_DIR, __dirname)).toThrow();
     });
 
     it('should throw error when tag/branch not exist', () => {
-        const option = {
-            root: ROOT_DIR,
-            git: CASE_DIR,
-            dir: path.join(__dirname, './.cache/createDiff'),
-            tag: 'tag:v0.0.0'
-        };
-        cleanup(option.dir);
-        expect(() => createDiff(option)).toThrow();
-        cleanup(option.dir);
+        cleanup(CACHE_DIR);
+        expect(() => createDiff(CACHE_DIR, PROJECT_DIR, 'branch:')).toThrow();
+        expect(() => createDiff(CACHE_DIR, PROJECT_DIR, 'tag:v0.0.0')).toThrow();
+        cleanup(CACHE_DIR);
     });
 
     function cleanup(dir) {
