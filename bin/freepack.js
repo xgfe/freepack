@@ -15,15 +15,7 @@
         command.handler || noop
     ));
 
-    const CONFIG_GROUP = "Config options:";
-
     yargs
-        .usage(`freepack ${
-            require('../package.json').version
-        }
-
-Usage: freepack [options]
-       freepack <command> [options]`)
         .help('help')
         .alias('help', 'h')
         .version()
