@@ -17,13 +17,13 @@ exports = module.exports = function(argv) {
         output: 'bundle',
         match: undefined,
         dot: false,
-        backup: 'freepack-[date]',
+        backup: true,
+        symbol: undefined,
         strict: false,
     }, configFile, configCli, configEnv, {
         ignore: ([]).concat(configFile.ignore || [], configEnv.ignore || []),
         alias: Object.assign({}, configFile.alias, configEnv.alias),
         module: Object.assign({}, configFile.module, configEnv.module),
-        symbol: Object.assign({}, configFile.symbol, configEnv.symbol),
         release: ([]).concat(configFile.release || [], configEnv.release || []),
     });
 };
