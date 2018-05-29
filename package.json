@@ -27,7 +27,9 @@
     "fs-extra": "^6.0.1",
     "glob": "^7.1.2",
     "minimatch": "^3.0.4",
-    "yargs": "^11.0.0"
+    "yargs": "^11.0.0",
+    "yeoman-environment": "^2.1.1",
+    "yeoman-generator": "^2.0.5"
   },
   "devDependencies": {
     "commitizen": "^2.9.6",
