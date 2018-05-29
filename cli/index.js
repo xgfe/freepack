@@ -6,6 +6,7 @@ const configParse = require('./util/config-parse');
 
 
 exports.commands = [
+    require('./init'),
 ];
 
 exports.builder = configYargs;
