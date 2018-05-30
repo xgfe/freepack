@@ -1,6 +1,8 @@
 {
-    "root": "src", // not support project self
+    "context": "src", // not support project self
+    "src": "src", // not support project self
     "diff": "tag", // auto tag:v0.0.1 branch:branch_name commit:notsupport path:notsupport
+    "output": "tag", // auto tag:v0.0.1 branch:branch_name commit:notsupport path:notsupport
     "match": "normal", // strict none
     "ignore": [
         "path"
