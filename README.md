@@ -213,6 +213,9 @@ Modify the default symbol configuration by `option.symbol`
     "~regexp", // string (regexp rule)
   ],
 
+  "exclusive": false,
+  // support in env config
+
   "dot": false, // boolean (default false),
   // Include .dot files in normal matches and globstar matches.
   // Note that an explicit dot in a portion of the pattern will always match dot files.
