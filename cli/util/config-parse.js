@@ -48,6 +48,7 @@ function getFileConfig(argv) {
 
     return config;
 }
+exports.file = getFileConfig;
 
 function getEnvConfig(argv) {
     const env_name = argv.configEnv || 'FREEPACK';
@@ -55,6 +56,7 @@ function getEnvConfig(argv) {
 
     return configEnv.parse(env_str);
 }
+exports.env = getEnvConfig;
 
 function getCliConfig(argv) {
     const configs = [];
@@ -76,3 +78,4 @@ function getCliConfig(argv) {
 
     return config;
 }
+exports.cli = getCliConfig;
