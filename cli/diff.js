@@ -37,6 +37,5 @@ exports.handler = (argv) => {
     console.log('     [+]:', diffCreate.length);
     console.log('     [-]:', diffDelete.length);
     console.log('     [ ]:', diffUpdate.length);
-    console.log('');
     console.log('  option:', JSON.stringify(packer.option));
 };

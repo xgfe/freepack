@@ -78,7 +78,7 @@ exports.handler = argv => {
         }
     })
     .then(configEnv => {
-        console.log(configEnv)
+        console.log(configEnv);
         if (argv.output) {
             const outputPath = path.join(process.cwd(), argv.output);
             fs.writeFileSync(outputPath, configEnv, 'utf8');

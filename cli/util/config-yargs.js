@@ -3,6 +3,7 @@ const freepack = require('../../');
 const CONFIG_GROUP = 'Config options:';
 const BASIC_GROUP = 'Basic options:';
 const ADVANCED_GROUP = 'Advanced options:';
+const LOCAL_GROUP = 'Local options:';
 
 
 // env => cli => file
@@ -85,3 +86,4 @@ exports = module.exports = yargs => yargs
 exports.CONFIG_GROUP = CONFIG_GROUP;
 exports.BASIC_GROUP = BASIC_GROUP;
 exports.ADVANCED_GROUP = ADVANCED_GROUP;
+exports.LOCAL_GROUP = LOCAL_GROUP;
