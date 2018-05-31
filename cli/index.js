@@ -7,6 +7,7 @@ const configParse = require('./util/config-parse');
 
 exports.commands = [
     require('./init'),
+    require('./diff'),
     require('./env')
 ];
 
@@ -19,6 +20,7 @@ exports.handler = argv => {
         console.log('freepack:', `${time.total()}ms`);
         console.log('      id:', packer.id);
         console.log('     src:', packer.src);
+        console.log('    diff:', packer.diff);
         console.log('  output:', packer.output);
         console.log('  backup:', packer.backup);
         console.log('timeused:', time.list().map(([type, millisecond]) => `${type}[${millisecond}ms]`).join(', '));
