@@ -1,15 +1,15 @@
 "use strict";
 
 const path = require('path');
+const tar = require('tar');
 const rimraf = require('rimraf');
 const fsExtra = require('fs-extra');
 
+const uuid = require('../lib/util/uuid');
 const Packer = require('../lib/Packer');
 const Bundle = require('../lib/Bundle');
 const VARIABLE = require('../lib/variable');
 
-
-const PROJECT_DIR = path.resolve(__dirname, '../');
 
 describe('Packer', () => {
     let option;
@@ -63,15 +63,23 @@ describe('Packer', () => {
     });
 
     it('should create all bundle by git', () => {
+        const cache_dir = path.resolve(__dirname, '.cache', uuid());
+        const gzip_path = path.resolve(__dirname, './cases/git.tar.gz');
+        let git_dir = path.resolve(cache_dir, 'tar');
+        fsExtra.mkdirpSync(git_dir);
+        tar.x({ file: gzip_path, C: git_dir, sync: true });
+        git_dir = path.resolve(git_dir, 'git');
+
         packer = new Packer(Object.assign(option, {
             diff: 'git:master',
-            context: PROJECT_DIR,
+            context: git_dir,
             backup: false
         }));
         expect(() => packer.init()).not.toThrow();
         expect(packer.newest).toBeInstanceOf(Bundle);
         expect(packer.stable).toBeInstanceOf(Bundle);
         expect(packer.bundle).toBeInstanceOf(Bundle);
+        rimraf.sync(cache_dir);
     });
 
     it('should compare bundle', () => {
