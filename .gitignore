@@ -1,5 +1,6 @@
 /node_modules
 /coverage
+/bundle
 freepack.config.js
 .DS_Store
 *.log
