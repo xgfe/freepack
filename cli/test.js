@@ -2,9 +2,11 @@
 
 const fs = require('fs');
 const path = require('path');
-const freepack = require('../');
 const configYargs = require('./util/config-yargs');
 const configParse = require('./util/config-parse');
+
+const freepack = require('../');
+const VARIABLE = require('../lib/variable');
 
 
 exports.cmd = 'test';
@@ -37,132 +39,74 @@ exports.builder = yargs => {
 
 exports.handler = argv => {
     const config = configParse(argv);
-    const info = argv.moduleCoverage ? testModuleCoverage(config) : test(config);
-    const packer = info.packer;
-    const basic = [
-        { key: 'freepack', value: info.type},
-        { key: 'src', value: packer.src},
-        { key: 'diff', value: packer.diff},
-        { key: 'option', value: JSON.stringify(packer.option)}
-    ].concat(info.basic);
-    const detail = info.detail;
+    const packer = freepack.debug(Object.assign(config, argv.moduleCoverage ? {
+        strict: true,
+        release: Object.keys(config.module).map(key => {
+            return config => config.symbol.module + key;
+        })
+    } : {}));
+    const info = {
+        cli: `test${argv.moduleCoverage ? '@module' : ''}`,
+        src: packer.src,
+        diff: packer.diff,
+        source: packer.newest.dir,
+        origin: packer.stable.dir,
+        count: {
+            source: packer.newest.getFile().length,
+            origin: packer.stable.getFile().length,
+        },
+        resource: packer.resource.map(res => res.path),
+        newest: packer.resource.filter(res => res.file.bundle.type === VARIABLE.BUNDLE_TYPE.NEWEST).map(res => res.path),
+        stable: packer.resource.filter(res => res.file.bundle.type === VARIABLE.BUNDLE_TYPE.STABLE).map(res => res.path),
+        option: packer.option,
+        files: {
+            source: packer.newest.getFile().map(file => file.path),
+            origin: packer.stable.getFile().map(file => file.path),
+        },
+    };
+
+    if (argv.moduleCoverage) {
+        info.coverage = {};
+        info.coverage.files = [].concat(
+            packer.newest.getFile().map(file => file.path)
+        ).concat(
+            packer.stable.getFile().map(file => file.path)
+        ).filter(
+            (fpath, index, list) => index === list.indexOf(fpath)
+        );
+        info.coverage.overlay = info.coverage.files.filter(fpath => packer.matcher.test(fpath) !== VARIABLE.MATCH_STAT.UNMATCH);
+        info.coverage.uncover = info.coverage.files.filter(fpath => packer.matcher.test(fpath) === VARIABLE.MATCH_STAT.UNMATCH);
+        info.coverage.rate = info.coverage.overlay.length / info.coverage.files.length;
+    }
 
     if (argv.print !== 'none') {
-        formatMessage(basic).concat(argv.print === 'detail' ? detail : []).forEach(message => console.log(message));
-    }
-
-    if (argv.reportFile) {
-        const reportFilePath = path.join(process.cwd(), argv.reportFile);
-        const fileSource = formatMessage(basic).concat(detail).join('\n');
-        fs.writeFileSync(reportFilePath, fileSource, 'utf8');
-    }
-};
-
-function testModuleCoverage(config) {
-    config.release = Object.keys(config.module).map(key => config => config.symbol.module + key);
-
-    const packer = freepack.debug(config);
-    const TEST_STAT = freepack.variable.TEST_STAT;
-
-    const info = {
-        type: 'test module coverage',
-        packer: packer,
-        basic: [],
-        detail: []
-    };
-
-    if (packer.rules.length() === 0) {
-        info.basic.push('WARN: empty module config!');
-        return info;
-    }
-
-    const files = ([]).concat(packer.newest.getFile(), packer.stable.getFile());
-    const fileMap = [];
-    const coverFiles = [];
-    const uncoverFiles = [];
-    files.forEach(file => {
-        if (!fileMap[file.path]) {
-
-            if (packer.rules.test(file.path) === TEST_STAT.UNRELEASE_UNMATCHED) {
-                uncoverFiles.push(file);
+        console.log(`freepack ${info.cli}`);
+        console.log(`source(${info.count.source}): ${info.src}`);
+        console.log(`origin(${info.count.origin}): ${info.diff}`);
+        console.log(`resource: ${info.resource.length}`);
+        console.log(`newest: ${info.newest.length}`);
+        console.log(`stable: ${info.stable.length}`);
+        if (info.coverage) {
+            console.log(`coverage: ${(info.coverage.rate * 100).toFixed(2)}% (${info.coverage.overlay.length}/${info.coverage.files.length})`);
+        }
+        if (argv.print === 'detail') {
+            console.log('='.repeat(50));
+            if (info.coverage) {
+                if (info.coverage.uncover.length === 0) {
+                    console.log('Congratulations, full files coverage!');
+                } else {
+                    console.log(`Uncover files(${info.coverage.uncover.length}):`);
+                    console.log('-'.repeat(50));
+                    info.coverage.uncover.forEach(fpath => console.log(`${fpath}`))
+                }
             } else {
-                coverFiles.push(file);
+                info.newest.forEach(fpath => console.log(`[N] ${fpath}`));
+                info.stable.forEach(fpath => console.log(`[S] ${fpath}`));
             }
-
-            fileMap[file.path] = true;
+            console.log('='.repeat(50));
         }
-    });
-
-    const total = Object.keys(fileMap).length;
-    const cover = coverFiles.length;
-    const uncover = uncoverFiles.length;
-    const coverage = cover / total * 100;
-
-    info.basic = [{
-        key: 'coverage',
-        value: `${coverage.toFixed(2)}%(${cover}/${total})`
-    }, {
-        key: 'total', value: `${total}`
-    }, {
-        key: 'cover', value: `${cover}`
-    }, {
-        key: 'uncover', value: `${uncover}`
-    }]
-
-    if (uncoverFiles.length === 0) {
-        info.detail.push('Congratulations, full files coverage!');
-    } else {
-        info.detail.push(`Uncover files[${uncover}] in ${packer.src}`);
-        uncoverFiles.forEach(file => info.detail.push(file.path));
+        console.log(info.option);
     }
 
-    return info;
-}
-
-function test(config) {
-    const packer = freepack.debug(config);
-    const BUNDLE_TYPE = freepack.variable.BUNDLE_TYPE;
-
-    const newest = packer.resource.filter(res => res.file.bundle.type === BUNDLE_TYPE.NEWEST);
-    const stable = packer.resource.filter(res => res.file.bundle.type === BUNDLE_TYPE.STABLE);
-
-    const info = {
-        type: 'test',
-        packer: packer,
-        basic: [
-            { key: 'resource', value: `${packer.resource.length}` },
-            { key: 'newest[N]', value: `${newest.length}` },
-            { key: 'stable[S]', value: `${stable.length}` },
-        ],
-        detail: []
-    };
-
-    info.detail = packer.resource.map(res => `[${
-        res.file.bundle.type === BUNDLE_TYPE.NEWEST ? 'N' : 'S'
-    }]${res.path}`);
-
-    return info;
-}
-
-function formatMessage(message) {
-    let keyLength = 0;
-    message.forEach(item => {
-        if (typeof item === 'object') {
-            keyLength = Math.max(item.key.length, keyLength);
-        }
-    });
-    keyLength += 2;
-
-    let keyPrefix = ' '.repeat(keyLength);
-
-    return message.map(item => {
-        if (typeof item === 'string') {
-            return item;
-        } else {
-            let { key, value } = item;
-            key, value
-            key = keyPrefix + key + `${key ? ': ' : ''}`;
-            return key.slice(key.length - keyLength) + value;
-        }
-    });
-}
+    argv.reportFile && fs.writeFileSync(path.join(process.cwd(), argv.reportFile), JSON.stringify(info), 'utf8');
+};

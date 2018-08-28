@@ -68,6 +68,7 @@ exports.handler = (argv) => {
         create: difference.create,
         delete: difference.delete,
         update: difference.update,
+        option: packer.option,
         files: {
             source: packer.newest.getFile().map(file => file.path),
             origin: packer.stable.getFile().map(file => file.path),
@@ -75,7 +76,7 @@ exports.handler = (argv) => {
     };
 
     if (argv.print !== 'none') {
-        console.log(`freepack diff`);
+        console.log(`freepack ${info.cli}`);
         console.log(`source(${info.count.source}): ${info.src}`);
         console.log(`origin(${info.count.origin}): ${info.diff}`);
         console.log(`create files: ${info.count.create}`);
@@ -89,6 +90,7 @@ exports.handler = (argv) => {
             console.log('='.repeat(50));
             console.log('[+] Create, [-] Delete, [ ] Update');
         }
+        console.log(info.option);
     }
 
     argv.reportFile && fs.writeFileSync(path.join(process.cwd(), argv.reportFile), JSON.stringify(info), 'utf8');
