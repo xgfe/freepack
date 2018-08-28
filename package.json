@@ -12,7 +12,7 @@
     "test": "node --max-old-space-size=4096 --trace-deprecation node_modules/jest-cli/bin/jest",
     "test:integration": "node --max-old-space-size=4096 --trace-deprecation node_modules/jest-cli/bin/jest --testMatch \"<rootDir>/test/*.test.js\"",
     "test:unit": "node --max-old-space-size=4096 --trace-deprecation node_modules/jest-cli/bin/jest --testMatch \"<rootDir>/test/*.unittest.js\"",
-    "coverage": "cat ./coverage/lcov.info | coveralls",
+    "travis": "node --max-old-space-size=4096 node_modules/jest-cli/bin/jest --coverage",
     "cover": "npm run cover:init && npm run cover:all && npm run cover:report",
     "cover:init": "rimraf coverage",
     "cover:all": "node --max-old-space-size=4096 node_modules/jest-cli/bin/jest --coverage",
