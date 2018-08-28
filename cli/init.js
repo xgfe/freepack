@@ -1,8 +1,5 @@
 "use strict";
 
-// const prettier = require('prettier');
-// const jscodeshift = require('jscodeshift');
-
 const fs = require('fs');
 const path = require('path');
 const yeoman = require('yeoman-environment');
@@ -93,7 +90,7 @@ class generator extends Generator {
                 .then(answer => {
                     const { matchType, strictType, dotType } = answer;
                     if (matchType) {
-                        this.configuration.config.freepackOptions.match = freepack.variable.MATCH_MODE.STRICT;
+                        this.configuration.config.freepackOptions.match = freepack.MODE.STRICT;
                     }
                     this.configuration.config.freepackOptions.strict = strictType;
                     this.configuration.config.freepackOptions.dot = dotType;

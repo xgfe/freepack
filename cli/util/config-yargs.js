@@ -29,7 +29,6 @@ exports = module.exports = yargs => yargs
         defaultDescription: 'The current directory',
         requiresArg: true
     })
-
     .option('src', {
         type: 'string',
         describe: 'The directory of the pack.',
@@ -50,12 +49,11 @@ exports = module.exports = yargs => yargs
         defaultDescription: 'bundle',
         requiresArg: true
     })
-
     .option('match', {
         type: 'string',
         describe: 'The match mode',
         group: ADVANCED_GROUP,
-        choices: Object.keys(freepack.variable.MATCH_MODE).map(mode => freepack.variable.MATCH_MODE[mode]),
+        choices: Object.keys(freepack.MODE).map(mode => freepack.MODE[mode]),
         requiresArg: true
     })
     .option('backup', {

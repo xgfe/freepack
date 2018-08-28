@@ -1,62 +1,66 @@
+const fs = require('fs');
 const path = require('path');
 const util = require('./index');
 const configEnv = require('./config-env');
-const readConfig = require('./readConfig');
 
 
 // env > cli > file
 exports = module.exports = function(argv) {
-    const configEnv = getEnvConfig(argv);
-    const configCli = configEnv.exclusive ? {} : getCliConfig(argv);
-    const configFile = configEnv.exclusive ? {} : getFileConfig(argv);
+    const envConfig = configEnv.parse(process.env[argv.configEnv || 'FREEPACK']);
 
-    return Object.assign({
-        context: process.cwd(),
-        src: 'src',
-        diff: undefined,
-        output: 'bundle',
-        match: undefined,
-        dot: false,
-        backup: true,
-        symbol: undefined,
-        strict: false,
-    }, configFile, configCli, configEnv, {
-        ignore: ([]).concat(configFile.ignore || [], configEnv.ignore || []),
-        alias: Object.assign({}, configFile.alias, configEnv.alias),
-        module: Object.assign({}, configFile.module, configEnv.module),
-        release: ([]).concat(configFile.release || [], configEnv.release || []),
-    });
+    if (!(envConfig && typeof envConfig === 'object' && !Array.isArray(envConfig))) {
+        throw new Error('Invalid env config');
+    }
+
+    if (envConfig.exclusive) {
+        return envConfig;
+    }
+
+    const configs = {
+        env: envConfig,
+        cli: getCliConfig(argv),
+        file: argv.ignoreConfigFile ? {} : getFileConfig(argv.config)
+    };
+
+    return Object.assign(
+        {},
+        configs.file,
+        configs.cli,
+        configs.env,
+        {
+            alias: Object.assign({}, configs.file.alias, configs.env.alias),
+            module: Object.assign({}, configs.file.module, configs.env.module),
+            ignore: ([]).concat(configs.file.ignore || [], configs.env.ignore || []),
+            release: ([]).concat(configs.file.release || [], configs.env.release || []),
+        }
+    );
 };
 
 
-function getFileConfig(argv) {
-    if (argv.ignoreConfigFile) {
-        return {};
+function getFileConfig(configPath) {
+    configPath = configPath || 'freepack.config.js'
+    configPath = path.resolve(process.cwd(), configPath);
+
+    function read(fpath) {
+        try {
+            return JSON.parse(fs.readFileSync(fpath));
+        } catch (e) {
+            return require(fpath);
+        }
     }
 
-    let config = readConfig(argv.config || 'freepack.config.js');
-
-    if (!config && argv.config) {
-        throw new Error(`Can't parse config from ${argv.config}`);
+    if (fs.existsSync(configPath)) {
+        let config = read(configPath) || {};
+        if (typeof config === 'object' && !Array.isArray(config)) {
+            return config;
+        } else {
+            throw new Error(`Invalid config file`);
+        }
+    } else {
+        throw new Error(`not exist config file in ${fpath}`);
     }
-
-    config = config || {};
-
-    if (typeof config !== 'object' || Array.isArray(config)) {
-        throw new Error(`Invalid config file`);
-    }
-
-    return config;
 }
 exports.file = getFileConfig;
-
-function getEnvConfig(argv) {
-    const env_name = argv.configEnv || 'FREEPACK';
-    const env_str = process.env[env_name];
-
-    return configEnv.parse(env_str);
-}
-exports.env = getEnvConfig;
 
 function getCliConfig(argv) {
     const configs = [];

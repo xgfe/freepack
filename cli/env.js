@@ -5,11 +5,11 @@ const path = require('path');
 const inquirer = require('inquirer');
 const configYargs = require('./util/config-yargs');
 const configParse = require('./util/config-parse');
+const configEnv = require('./util/config-env');
 
 
 function generateEnv(configPath) {
-    const configFile = configParse.file({ config: configPath });
-    const modules = Object.keys(configFile.module || {});
+    const modules = Object.keys(configParse.file(configPath).module || {});
 
     if (modules.length === 0) {
         throw new Error(`At least one presupposition module is needed`);
@@ -33,7 +33,7 @@ function generateEnv(configPath) {
             type: 'checkbox',
             name: 'moduleType',
             message: 'Choice modules',
-            choices: ['a', 'b', 'c']
+            choices: modules
         })
     })
     .then(moduleTypeAnswers => {
@@ -65,23 +65,29 @@ exports.handler = argv => {
         if (argv.shortcut) {
             resolve(generateEnv(argv.config));
         } else {
-            if (!(argv.config || typeof argv.config === 'string')) {
+            if (!(argv.config && typeof argv.config === 'string')) {
                 reject('Required config path');
             }
 
-            const configPath = path.join(process.cwd(), argv.config);
+            const configPath = path.resolve(process.cwd(), argv.config);
             const configFile = fs.readFileSync(configPath);
-            const configObj = JSON.parse(configFile);
-            const configStr = JSON.stringify(configObj);
-            const configEnv = JSON.stringify(configStr);
-            resolve(configEnv);
+            inquirer.prompt({
+                type: 'confirm',
+                name: 'exclusive',
+                message: '[WARN] generate exclusive env config, other config (file, cli) will inoperative!!!',
+                default: false
+            }).then(exclusiveAnswer => {
+                let config = configEnv.env(JSON.parse(configFile));
+                config.exclusive = exclusiveAnswer.exclusive;
+                resolve(config);
+            });
         }
     })
-    .then(configEnv => {
-        console.log(configEnv);
+    .then(env => {
+        console.log(env);
         if (argv.output) {
             const outputPath = path.join(process.cwd(), argv.output);
-            fs.writeFileSync(outputPath, configEnv, 'utf8');
+            fs.writeFileSync(outputPath, env, 'utf8');
         }
     })
     .catch(e => {
