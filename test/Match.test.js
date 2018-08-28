@@ -3,9 +3,8 @@
 const path = require('path');
 
 const Match = require('../lib/Match');
-const VAR = require('../lib/VAR');
-const TEST_STAT = VAR.TEST_STAT;
-
+const Rule = require('../lib/Rule');
+const VARIABLE = require('../lib/variable');
 
 
 describe('Match', () => {
@@ -14,14 +13,16 @@ describe('Match', () => {
     beforeEach(() => {
         option = {
             alias: {
-                'alias.js': 'alias/js',
-                alias: 'alias',
-                common: 'common'
+                alias: 'ALIAS',
+                common: 'components'
             },
             module: {
-                'module/path': ['modulePath'],
-                common: ['common', 'lib'],
-                module: ['moduleA', 'moduleB']
+                module: ['module/1', 'module/2'],
+                moduleA: ['moduleA', '@moduleB'],
+                moduleB: ['moduleB'],
+                moduleRecyle1: ['@moduleRecyle2'],
+                moduleRecyle2: ['@moduleRecyle1'],
+                common: ['lib', '!components']
             },
             symbol: {
                 negation: '!',
@@ -36,163 +37,151 @@ describe('Match', () => {
         };
     });
 
-    it('should create Match with empty rules', () => {
-        expect((new Match(option)).toString()).toBe('');
-        expect((new Match(option, [])).toString()).toBe('');
-        expect((new Match(option, {})).toString()).toBe('');
+    it('should instantiation Match', () => {
+        expect(() => new Match(option)).not.toThrow();
     });
 
-    it('should match with path string', () => {
-        const match = new Match(option, '/path');
-        expect(match.test('/path/file.js')).toBe(TEST_STAT.RELEASE);
-    });
+    describe('match test', () => {
+        it('if the file rule not end with symbol.file, the test returns unmatch', () => {
+            let match = new Match(Object.assign(option, {
+                match: VARIABLE.MATCH_MODE.WARN
+            }), ['path/file.js']);
+            expect(match.test('/path/file.js')).toBe(VARIABLE.MATCH_STAT.UNMATCH)
+        });
 
-    it('should match with path match', () => {
-        const match = new Match(option, '-/path/**/**');
-        expect(match.test('/path/file.js')).toBe(TEST_STAT.RELEASE);
-    });
+        it('if the match mode is NORMAL when rules repeat, the test returns release', () => {
+            let match = new Match(Object.assign(option, {
+                match: VARIABLE.MATCH_MODE.NORMAL
+            }), ['path', 'path']);
+            expect(match.test('/path/file.js')).toBe(VARIABLE.MATCH_STAT.RELEASE)
+        });
 
-    it('should match with path regexp', () => {
-        const match = new Match(option, '~path');
-        expect(match.test('/path.js')).toBe(TEST_STAT.RELEASE);
-    });
+        it('if the match mode is WARN when rules repeat, the test returns release', () => {
+            let match = new Match(Object.assign(option, {
+                match: VARIABLE.MATCH_MODE.WARN
+            }), ['path', '!path/file.js$']);
+            expect(match.test('/path/file.js')).toBe(VARIABLE.MATCH_STAT.MATCHED)
+        });
 
-    it('should match if include alias', () => {
-        ([
-            ['$alias', '/alias/file.js', TEST_STAT.RELEASE],
-            ['$alias.js', '/alias/js/file.js', TEST_STAT.RELEASE],
-            ['$alias/path', '/alias/path/file.js', TEST_STAT.RELEASE],
-            ['path/$alias', '/path/$alias/file.js', TEST_STAT.RELEASE],
-        ]).forEach(item => {
-            const match = new Match(option, item[0]);
-            expect(match.test(item[1])).toBe(item[2]);
+        it('if the match mode is STRICT when rules repeat, the test throw error', () => {
+            let match = new Match(Object.assign(option, {
+                match: VARIABLE.MATCH_MODE.STRICT
+            }), ['!path', 'path']);
+            expect(() => match.test('/path/file.js')).toThrow();
+        });
+
+        it('if the match strict is true, the test returns unmatch', () => {
+            let match = new Match(Object.assign(option, {
+                strict: true
+            }));
+            ['/path', '/path/file.js'].forEach(
+                str => expect(match.test(str)).toBe(VARIABLE.MATCH_STAT.UNMATCH)
+            );
+        });
+
+        it('if the match strict is false, the test returns release', () => {
+            let match = new Match(Object.assign(option, {
+                strict: false
+            }));
+            ['/path', '/path/file.js'].forEach(
+                str => expect(match.test(str)).toBe(VARIABLE.MATCH_STAT.RELEASE)
+            );
         });
     });
 
-    it('should match if include module', () => {
-        const match = new Match(option, '@module');
-        expect(match.test('/moduleA/file.js')).toBe(TEST_STAT.RELEASE);
-        expect(match.test('/moduleB/file.js')).toBe(TEST_STAT.RELEASE);
-        expect((new Match(option, '@module/path')).test('/modulePath/file.js')).toBe(TEST_STAT.RELEASE);
+    it('should support multiple rules type', () => {
+        expect(new Match(option, 'rule').rules[0].toString()).toBe(new Rule('rule', option).toString());
+        expect(new Match(option, ['rule']).rules[0].toString()).toBe(new Rule('rule', option).toString());
+        expect(new Match(option, {'rule':true}).rules[0].toString()).toBe(new Rule('rule', option).toString());
     });
 
-    it('should match with path nesting', () => {
-        ([
-            [{ pathA: true }, '/pathA/file.js', TEST_STAT.RELEASE],
-            [{ pathB: {} }, '/path/file', TEST_STAT.UNRELEASE_UNMATCHED],
-            [{ pathC: { a: true } }, '/pathC/a/', TEST_STAT.RELEASE],
-            [{ pathC: { b: false } }, '/pathC/b/', TEST_STAT.UNRELEASE_MATCHED],
-            [{ pathD: 'subpath' }, '/pathD/subpath/file.js', TEST_STAT.RELEASE],
-            [{ pathE: 'file.js$' }, '/pathE/file.js', TEST_STAT.RELEASE],
-            [{ 'pathF$': true }, '/pathF', TEST_STAT.RELEASE],
-            [{ 'pathG$': 'subpath' }, '/pathG$/subpath/file.js', TEST_STAT.RELEASE],
-            [{ 'path/subpath': true }, '/path/subpath/', TEST_STAT.RELEASE],
-            [[ ['path'] ], '/path/file.js', TEST_STAT.RELEASE]
-        ]).forEach(item => {
-            const match = new Match(option, item[0]);
-            expect(match.test(item[1])).toBe(item[2]);
+    it('should support nestest rules', () => {
+        let rules = [
+            'str',
+            ['arr1', '!arr2', { arr3: true, arr4: false }],
+            {
+                obj1: 'a.js$',
+                obj2: {
+                    a: true,
+                    b: { c: false },
+                    '!d': 'e',
+                    '!f': '!g',
+                    h: '!i'
+                },
+                obj3: [
+                    'a',
+                    '!b',
+                    [
+                        'c',
+                        { d: 'e' }
+                    ]
+                ],
+            }
+        ];
+        let match = new Match(option, rules);
+
+
+        ([])
+        .concat(['str'])
+        .concat(['arr1', '!arr2', 'arr3', '!arr4'])
+        .concat(['obj1/a.js$'])
+        .concat(['obj2/a', '!obj2/b/c', '!obj2/d/e', '!obj2/f/g', '!obj2/h/i'])
+        .concat(['obj3/a', '!obj3/b', 'obj3/c', 'obj3/d/e'])
+        .forEach((rule, index) => {
+            expect(match.rules[index].toString()).toBe(new Rule(rule, option).toString());
         });
+        expect(match.toString()).toEqual(['/str/', '/arr1/', '!/arr2/', '/arr3/', '!/arr4/', '/obj1/a.js', '/obj2/a/', '!/obj2/b/c/', '!/obj2/d/e/', '!/obj2/f/g/', '!/obj2/h/i/', '/obj3/a/', '!/obj3/b/', '/obj3/c/', '/obj3/d/e/'].join('\n'));
+        expect(new Match(option, {rule:{}}).rules).toHaveLength(0);
     });
 
-    it('should match with path nesting if include minimatch/regexp/alias/module', () => {
-        ([
-            [{ '-/path/file.js': true }, '/path/file.js', TEST_STAT.RELEASE],
-            [{ '-path': 'subpath' }, '/-path/subpath/file.js', TEST_STAT.RELEASE],
-            [{ 'path': '-subpath' }, '/path/-subpath/file.js', TEST_STAT.RELEASE],
-            [{ '~path': true }, '/path/subpath/file.js', TEST_STAT.RELEASE],
-            [{ '~path': 'subpath' }, '/~path/subpath/file.js', TEST_STAT.RELEASE],
-            [{ 'path': '~subpath' }, '/path/~subpath/file.js', TEST_STAT.RELEASE],
-            [{ '$alias': true }, '/alias/file.js', TEST_STAT.RELEASE],
-            [{ 'path': '$alias' }, '/path/$alias/file.js', TEST_STAT.RELEASE],
-            [{ '@common': true }, '/lib/file.js', TEST_STAT.RELEASE],
-            [{ '@common': { 'path': true } }, '/common/path/file.js', TEST_STAT.RELEASE],
-            [{ 'path': { '@common': true } }, '/path/@common/file.js', TEST_STAT.RELEASE]
-        ]).forEach(item => {
-            const match = new Match(option, item[0]);
-            expect(match.test(item[1])).toBe(item[2]);
-        });
-    });
+    it('should support alias rule', () => {
+        let rules = [
+            '$alias', '$alias/a', 'b/$alias', '!c/$alias',
+            { '@common': ['a', '!$common', '$common/b.js$'] }
+        ];
+        let match = new Match(option, rules);
 
-    it('should toString', () => {
-        expect((new Match(option, ['path'])).toString()).toEqual('/path/');
-    });
-
-    describe('relation', () => {
-        it('should match with relation', () => {
-            const match = new Match(option, 'path:subpath');
-            expect(match.test('/path/subpath/file.js')).toBe(TEST_STAT.RELEASE);
-        });
-
-        it('should match with relation if include separation', () => {
-            const match = new Match(option, 'path:a,b');
-            expect(match.test('/path/a/file.js')).toBe(TEST_STAT.RELEASE);
-            expect(match.test('/path/b/file.js')).toBe(TEST_STAT.RELEASE);
-        });
-
-        it('should match with relation if not exist separation', () => {
-            const match = new Match(option, 'path:');
-            expect(match.test('/path/file.js')).toBe(TEST_STAT.RELEASE);
-        });
-
-        it('should match once in multiple relation', () => {
-            const match = new Match(option, 'path:a,b:c,d');
-            expect(match.test('/path/a/file.js')).toBe(TEST_STAT.RELEASE);
-            expect(match.test('/path/b:c/file.js')).toBe(TEST_STAT.RELEASE);
-            expect(match.test('/path/d/file.js')).toBe(TEST_STAT.RELEASE);
+        ([])
+        .concat(['ALIAS', 'ALIAS/a', 'b/ALIAS', '!c/ALIAS'])
+        .concat(['components/a', '!components/components', 'components/components/b.js$'])
+        .forEach((rule, index) => {
+            expect(match.rules[index].toString()).toBe(new Rule(rule, option).toString());
         });
     });
 
-    describe('negation', () => {
-        it('should not match if include negation', () => {
-            ([
-                [{ '!pathA': true }, '/pathA/file.js', TEST_STAT.UNRELEASE_MATCHED],
-                [{ 'pathC': { '!a': true } }, '/pathC/a/file.js', TEST_STAT.UNRELEASE_MATCHED],
-                [{ 'pathC': { '!b': false } }, '/pathC/b/file.js', TEST_STAT.UNRELEASE_MATCHED],
-                [{ '!pathC': { '!c': true } }, '/pathC/c/file.js', TEST_STAT.UNRELEASE_MATCHED],
-                [{ '!pathC': { '!d': false } }, '/pathC/d/file.js', TEST_STAT.UNRELEASE_MATCHED],
-                [{ 'pathD': '!subpath' }, '/pathD/subpath/file.js', TEST_STAT.UNRELEASE_MATCHED],
-                [ '!@module' , '/moduleA/file.js', TEST_STAT.UNRELEASE_MATCHED]
-            ]).forEach(item => {
-                const match = new Match(option, item[0]);
-                expect(match.test(item[1])).toBe(item[2]);
-            });
-        });
+    it('should support module rule', () => {
+        let rules = [
+            '@module',
+            '!@moduleA',
+            { '@common': false }
+        ];
+        let match = new Match(option, rules);
 
-        it('should not match when separation include negation', () => {
-            const match = new Match(option, 'path:a,!b');
-            expect(match.test('/path/a/file.js')).toBe(TEST_STAT.RELEASE);
-            expect(match.test('/path/b/file.js')).toBe(TEST_STAT.UNRELEASE_MATCHED);
+        ([])
+        .concat(['module/1', 'module/2'])
+        .concat(['!moduleA', '!moduleB'])
+        .concat(['!lib', '!components'])
+        .forEach((rule, index) => {
+            expect(match.rules[index].toString()).toBe(new Rule(rule, option).toString());
         });
     });
 
-    describe('catch error', () => {
-        it('should warn when matching repeat', () => {
-            option.match = VAR.MATCH_MODE.WARN;
-            const match = new Match(option, [
-                'path',
-                'path/subpath'
-            ]);
-            expect(() => match.test('/path/subpath/file.js')).not.toThrow();
+    describe('invalid rules', () => {
+        it('should throw error when rules use recyle module', () => {
+            expect(() => new Match(option, '@moduleRecyle1')).toThrow();
         });
 
-        it('should throw error when matching repeat', () => {
-            option.match = VAR.MATCH_MODE.STRICT;
-            const match = new Match(option, [
-                'path',
-                'path/subpath'
-            ]);
-            expect(() => match.test('/path/subpath/file.js')).toThrow();
+        it('should throw error when rule type invalid', () => {
+            expect(() => new Match(option, [ 1 ])).toThrow();
+            expect(() => new Match(option, { rule: 1 })).toThrow();
         });
 
-        it('should throw error when release rule invalid', () => {
-            expect(() => new Match(option, true)).toThrow();
-            expect(() => new Match(option, [true])).toThrow();
-            expect(() => new Match(option, [ '' ])).toThrow();
-            expect(() => new Match(option, [ [ true ] ])).toThrow();
-            expect(() => new Match(option, { path: [{}] })).toThrow();
-            expect(() => new Match(option, { path: 1 })).toThrow();
-            expect(() => new Match(option, { path: () => {} })).toThrow();
-            expect(() => new Match(option, '@module/file.js')).toThrow();
+        it('should throw error when module not exist', () => {
+            expect(() => new Match(option, '@not_exist_module')).toThrow();
+        });
+
+        it('should throw error when alias not exist', () => {
+            expect(() => new Match(option, '$not_exist_alias')).toThrow();
         });
     });
 });

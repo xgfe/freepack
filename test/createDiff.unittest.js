@@ -12,7 +12,7 @@ const CACHE_DIR = path.join(__dirname, '.cache', Date.now().toString());
 
 describe('createDiff', () => {
     it('should create diff', () => {
-        ['auto', 'tag:v0.0.1', 'branch:master'].forEach(tag => {
+        ['', 'v0.0.1', 'master'].forEach(tag => {
             cleanup(CACHE_DIR);
             expect(() => createDiff(CACHE_DIR, PROJECT_DIR, tag)).not.toThrow();
             cleanup(CACHE_DIR);
@@ -23,10 +23,10 @@ describe('createDiff', () => {
         expect(() => createDiff(CACHE_DIR, __dirname)).toThrow();
     });
 
-    it('should throw error when tag/branch not exist', () => {
+    it('should throw error when branch not exist', () => {
         cleanup(CACHE_DIR);
-        expect(() => createDiff(CACHE_DIR, PROJECT_DIR, 'branch:')).toThrow();
-        expect(() => createDiff(CACHE_DIR, PROJECT_DIR, 'tag:v0.0.0')).toThrow();
+        expect(() => createDiff(CACHE_DIR, PROJECT_DIR, '______')).toThrow();
+        expect(() => createDiff(CACHE_DIR, PROJECT_DIR, 'v0.0.0')).toThrow();
         cleanup(CACHE_DIR);
     });
 

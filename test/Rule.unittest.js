@@ -3,7 +3,6 @@
 const path = require('path');
 
 const Rule = require('../lib/Rule');
-const TEST_STAT = require('../lib/VAR').TEST_STAT;
 
 
 describe('Rule', () => {
@@ -11,8 +10,7 @@ describe('Rule', () => {
 
     beforeEach(() => {
         option = {
-            alias: {},
-            module: {},
+            dot: false,
             symbol: {
                 negation: '!',
                 relation: ':',
@@ -26,99 +24,57 @@ describe('Rule', () => {
         };
     });
 
-    it('should match with string', () => {
-        const rule = new Rule('/path', option);
-        expect(rule.test('/path')).toBe(TEST_STAT.UNRELEASE_UNMATCHED);
-        expect(rule.test('/path/file.js')).toBe(TEST_STAT.RELEASE);
-        expect(rule.test('/path/subpath/file.js')).toBe(TEST_STAT.RELEASE);
-        expect(rule.test('/parent/path/file.js')).toBe(TEST_STAT.UNRELEASE_UNMATCHED);
+    it('should instantiation Rule', () => {
+        expect(() => new Rule('/path', option)).not.toThrow();
     });
 
-    it('should match same path if not start with /', () => {
-        const rule = new Rule('path', option);
-        const sameRule = new Rule('/path', option);
-        expect(rule.test('/path')).toBe(sameRule.test('/path'));
-        expect(rule.test('/path/file.js')).toBe(sameRule.test('/path/file.js'));
-        expect(rule.test('/path/subpath/file.js')).toBe(sameRule.test('/path/subpath/file.js'));
-        expect(rule.test('/parent/path/file.js')).toBe(sameRule.test('/parent/path/file.js'));
+    describe('regexp rule', () => {
+        it('should test correct', () => {
+            const rule = new Rule('~path', option);
+            expect(rule.test('path')).toBe(true);
+            expect(rule.test('/parent/path/file.js')).toBe(true);
+        });
     });
 
-    it('should match one file', () => {
-        const rule = new Rule('/file.js$', option);
-        expect(rule.test('/file.js')).toBe(TEST_STAT.RELEASE);
-        expect(rule.test('/file.js/a.js')).toBe(TEST_STAT.UNRELEASE_UNMATCHED);
+    describe('minimatch rule', () => {
+        it('should test correct', () => {
+            const rule = new Rule('-/path/**/*', option);
+            expect(rule.test('/path')).toBe(false);
+            expect(rule.test('/path/file.js')).toBe(true);
+            expect(rule.test('/path/subpath/file.js')).toBe(true);
+            expect(rule.test('/parent/path/file.js')).toBe(false);
+        });
     });
 
-    it('should match with string and include alias', () => {
-        option.alias = {
-            module: '/root/src'
-        };
-        const rule = new Rule('$module/path', option);
-        expect(rule.test('/root/src/path/file.js')).toBe(TEST_STAT.RELEASE);
-        expect(rule.test('/root/src/path/subpath/file.js')).toBe(TEST_STAT.RELEASE);
-        expect((new Rule('$module', option)).test('/root/src/path/file.js')).toBe(TEST_STAT.RELEASE);
+    describe('path rule', () => {
+        it('should test correct for directory rule', () => {
+            const rule = new Rule('/path', option);
+            expect(rule.test('/path')).toBe(false);
+            expect(rule.test('/path/file.js')).toBe(true);
+            expect(rule.test('/path/subpath/file.js')).toBe(true);
+            expect(rule.test('/parent/path/file.js')).toBe(false);
+        });
+
+        it('should test correct for file rule', () => {
+            const rule = new Rule('/file.js$', option);
+            expect(rule.test('/path')).toBe(false);
+            expect(rule.test('/file.js')).toBe(true);
+            expect(rule.test('/file.js/path')).toBe(false);
+            expect(rule.test('/path/file.js')).toBe(false);
+        });
+
+        it('should be same as rule without `/`', () => {
+            expect((new Rule('path', option)).toString()).toBe((new Rule('/path', option)).toString());
+            expect((new Rule('path.js', option)).toString()).toBe((new Rule('/path.js', option)).toString());
+            expect((new Rule('path.js$', option)).toString()).toBe((new Rule('/path.js$', option)).toString());
+        });
     });
 
-    it('should throw error if alias not defined', () => {
-        expect(() => new Rule('$module/path', option)).toThrow();
-    });
-
-    it('should match with regexp', () => {
-        const rule = new Rule('~path', option);
-        expect(rule.test('/path')).toBe(TEST_STAT.RELEASE);
-        expect(rule.test('/parent/path/file.js')).toBe(TEST_STAT.RELEASE);
-    });
-
-    it('should match with minimatch', () => {
-        const rule = new Rule('-/path/**/*', option);
-        expect(rule.test('/path')).toBe(TEST_STAT.UNRELEASE_UNMATCHED);
-        expect(rule.test('/path/file.js')).toBe(TEST_STAT.RELEASE);
-        expect(rule.test('/path/subpath/file.js')).toBe(TEST_STAT.RELEASE);
-        expect(rule.test('/parent/path/file.js')).toBe(TEST_STAT.UNRELEASE_UNMATCHED);
-    });
-
-    it('should not match with string if include negation', () => {
-        const rule = new Rule('!/path', option);
-        expect(rule.test('/path')).toBe(TEST_STAT.UNRELEASE_UNMATCHED);
-        expect(rule.test('/path/file.js')).toBe(TEST_STAT.UNRELEASE_MATCHED);
-        expect(rule.test('/path/subpath/file.js')).toBe(TEST_STAT.UNRELEASE_MATCHED);
-        expect(rule.test('/parent/path/file.js')).toBe(TEST_STAT.UNRELEASE_UNMATCHED);
-    });
-
-    it('should not match with minimatch if include negation', () => {
-        option.alias = {
-            module: '/root/src'
-        };
-        const rule = new Rule('!$module/path', option);
-        expect(rule.test('/root/src/path/file.js')).toBe(TEST_STAT.UNRELEASE_MATCHED);
-    });
-
-    it('should not match file if include negation', () => {
-        const rule = new Rule('!file.js$', option);
-        expect(rule.test('/file.js')).toBe(TEST_STAT.UNRELEASE_MATCHED);
-        expect(rule.test('/path/file.js')).toBe(TEST_STAT.UNRELEASE_UNMATCHED);
-    });
-
-    it('should not match with regexp if include negation', () => {
-        const rule = new Rule('!~path', option);
-        expect(rule.test('/path.js')).toBe(TEST_STAT.UNRELEASE_MATCHED);
-    });
-
-    it('should not match with minimatch if include negation', () => {
-        const rule = new Rule('!-/path/**/*', option);
-        expect(rule.test('/path/a.js')).toBe(TEST_STAT.UNRELEASE_MATCHED);
-    });
-
-    it('should not match with string if set negation', () => {
-        const rule = new Rule('/path', option);
-
-        expect(rule.test('/path/file.js')).toBe(TEST_STAT.RELEASE);
-
-        rule.setNegation(true);
-        expect(rule.test('/path/file.js')).toBe(TEST_STAT.UNRELEASE_MATCHED);
-
-        rule.setNegation(false);
-        expect(rule.test('/path/file.js')).toBe(TEST_STAT.RELEASE);
+    describe('negation', () => {
+        it('should can get negation', () => {
+            expect((new Rule('path', option)).negation).toBe(false);
+            expect((new Rule('!path', option)).negation).toBe(true);
+        });
     });
 
     it('toString', () => {
