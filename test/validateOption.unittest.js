@@ -47,7 +47,7 @@ describe('validateOption', () => {
             output: 'o',
             match: VARIABLE.MATCH_MODE.STRICT,
             strict: true,
-            release: ['rule'],
+            release: ['rule', option => option.symbol.module + 'module'],
             alias: { common: 'common' },
             module: { module: [] },
             symbol: {
@@ -64,7 +64,9 @@ describe('validateOption', () => {
             dot: true,
             backup: false,
         };
-        expect(validateOption(option)).toEqual(option);
+        expect(validateOption(option)).toEqual(Object.assign({}, option, {
+            release: ['rule', '*module']
+        }));
     });
 
     describe('validate option', () => {
