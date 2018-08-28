@@ -17,7 +17,11 @@ exports.parse = env => {
             return {};
         }
     } else {
-        return null;
+        if (env) {
+            return null;
+        } else {
+            return {};
+        }
     }
 };
 

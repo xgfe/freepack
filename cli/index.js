@@ -16,16 +16,15 @@ exports.builder = configYargs;
 
 exports.handler = argv => {
     const config = configParse(argv);
-    freepack(config, packer => {
-        const time = packer.time;
-        console.log('freepack:', `${time.total()}ms`);
-        console.log('      id:', packer.id);
-        console.log('     src:', packer.src);
-        console.log('    diff:', packer.diff);
-        console.log('  output:', packer.output);
-        console.log('  backup:', packer.backup);
-        console.log('timeused:', time.list().map(([type, millisecond]) => `${type}[${millisecond}ms]`).join(', '));
-        console.log(' release:', JSON.stringify(packer.option.release));
-        console.log('  option:', JSON.stringify(packer.option));
-    });
+    freepack(config, packer => console.log('freepack', JSON.stringify({
+        uuid: packer.uuid,
+        src: packer.src,
+        diff: packer.diff,
+        output: packer.output,
+        backup: packer.backup,
+        time: packer.timer.list().map(([type, millisecond]) => `${type}[${millisecond}ms]`).join(', '),
+        times: `${packer.timer.total()}ms`,
+        option: JSON.stringify(packer.option),
+        matcher: packer.matcher.toString().split('\n')
+    })));
 };
