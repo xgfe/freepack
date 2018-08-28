@@ -39,6 +39,12 @@ describe('Match', () => {
 
     it('should instantiation Match', () => {
         expect(() => new Match(option)).not.toThrow();
+        expect(() => new Match(Object.assign(option, {
+            strict: true
+        })).toString()).not.toThrow();
+        expect(() => new Match(Object.assign(option, {
+            strict: false
+        })).toString()).not.toThrow();
     });
 
     describe('match test', () => {
