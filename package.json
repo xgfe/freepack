@@ -12,6 +12,7 @@
     "test": "node --max-old-space-size=4096 --trace-deprecation node_modules/jest-cli/bin/jest",
     "test:integration": "node --max-old-space-size=4096 --trace-deprecation node_modules/jest-cli/bin/jest --testMatch \"<rootDir>/test/*.test.js\"",
     "test:unit": "node --max-old-space-size=4096 --trace-deprecation node_modules/jest-cli/bin/jest --testMatch \"<rootDir>/test/*.unittest.js\"",
+    "coverage": "cat ./coverage/lcov.info | coveralls",
     "cover": "npm run cover:init && npm run cover:all && npm run cover:report",
     "cover:init": "rimraf coverage",
     "cover:all": "node --max-old-space-size=4096 node_modules/jest-cli/bin/jest --coverage",
@@ -36,6 +37,7 @@
   "devDependencies": {
     "commitizen": "^2.9.6",
     "conventional-changelog-cli": "^2.0.1",
+    "coveralls": "^3.0.2",
     "cz-conventional-changelog": "^2.1.0",
     "istanbul": "^0.4.5",
     "jest": "^22.4.4",
